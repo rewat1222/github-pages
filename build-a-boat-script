@@ -1,0 +1,65 @@
+-- รับตัวละครของผู้เล่น
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+-- รับตำแหน่งของสมบัติที่คุณต้องการให้ตัวละครบินไป
+local treasures = workspace:WaitForChild("Treasures"):GetChildren()  -- สมมุติว่าเรามี Model ชื่อ "Treasures"
+local spawnPoint = workspace:WaitForChild("SpawnPoint")  -- จุดเริ่มต้นของตัวละคร
+local treasureIndex = 1
+
+-- ฟังก์ชันให้ตัวละครบินไปหาสมบัติ
+local function flyToTreasure()
+    -- ตรวจสอบว่ามีสมบัติที่เหลือหรือไม่
+    if treasureIndex > #treasures then
+        treasureIndex = 1  -- รีเซ็ตกลับไปหาสมบัติแรก
+    end
+    
+    local treasure = treasures[treasureIndex]
+    local targetPosition = treasure.Position
+    
+    -- คำนวณทิศทางที่ตัวละครจะบินไป
+    local direction = (targetPosition - humanoidRootPart.Position).unit
+    local speed = 100  -- ความเร็วในการบิน
+    
+    -- สร้าง BodyVelocity เพื่อบินไปยังตำแหน่งสมบัติ
+    local bodyVelocity = Instance.new("BodyVelocity")
+    bodyVelocity.MaxForce = Vector3.new(100000, 100000, 100000)  -- กำหนดแรงที่สามารถใช้ได้
+    bodyVelocity.Velocity = direction * speed
+    bodyVelocity.Parent = humanoidRootPart
+    
+    -- เพิ่มตัวนับเวลาเพื่อลบ BodyVelocity หลังจากบินถึงตำแหน่ง
+    game:GetService("Debris"):AddItem(bodyVelocity, 0.5)  -- ลบ BodyVelocity หลังจาก 0.5 วินาที
+    
+    -- รอให้ตัวละครถึงตำแหน่งสมบัติ
+    while (humanoidRootPart.Position - targetPosition).magnitude > 5 do
+        wait(0.1)
+    end
+    
+    -- เก็บสมบัติ (สามารถเพิ่มเสียงหรือฟังก์ชันเก็บสมบัติที่นี่)
+    print("เก็บสมบัติแล้ว!")
+    treasure:Destroy()  -- ลบสมบัติเมื่อเก็บแล้ว (สมมุติว่าเป็นการเก็บสมบัติ)
+    
+    -- ไปหาสมบัติถัดไป
+    treasureIndex = treasureIndex + 1
+    wait(1)  -- รอ 1 วินาที ก่อนบินไปหาสมบัติถัดไป
+end
+
+-- ฟังก์ชันรีเซ็ตตัวละครกลับไปจุดเกิด
+local function resetCharacter()
+    -- รีเซ็ตตัวละครกลับไปที่จุดเกิด
+    humanoidRootPart.CFrame = spawnPoint.CFrame
+    wait(1)  -- รอ 1 วินาที ก่อนเริ่มต้นใหม่
+    print("ตัวละครรีเซ็ตแล้ว!")
+end
+
+-- ฟังก์ชันหลัก
+local function startGameLoop()
+    while true do
+        flyToTreasure()  -- บินไปหาสมบัติ
+        resetCharacter()  -- รีเซ็ตตัวละคร
+    end
+end
+
+-- เริ่มต้นเกม
+startGameLoop()
